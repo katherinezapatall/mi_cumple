@@ -1451,7 +1451,8 @@ window.submitReg=async()=>{
   try{
     const newRef=await push(ref(db,'events/'+currentEventId+'/guests'),{name,activity:selAct,age:selAge,snacks,blankets:blanketCount,companions:comps,guestPinHash,ts:Date.now()});
     myGuestId=newRef.key;
-    showAlert('reg-ok',t('regOk'));
+    showModal({icon:'🎉', title:t('regOk'), msg:'', buttons:[{label:'OK', cls:'modal-btn-ok', value:true}]});
+    setTimeout(()=>hideModal(), 3000);
     document.getElementById('inp-rname').value='';
     document.getElementById('inp-guest-pin').value='';
     snackFields=[]; blanketCount=0;    renderSnackFields();
@@ -1779,8 +1780,9 @@ window.saveGE=async(id)=>{
   };
   await update(ref(db,'events/'+currentEventId+'/guests/'+id),u);
   editGuestId=null;
-  await mAlert('✅', t('changesSaved'), '');
-  renderGuests();
+  showModal({icon:'✅', title:t('changesSaved'), msg:'', buttons:[{label:'OK', cls:'modal-btn-ok', value:true}]});
+  setTimeout(()=>{ hideModal(); renderGuests(); }, 3000);
+  await new Promise(r=>setTimeout(r,0)); // yield so renderGuests runs after modal closes
 };
 
 window.delGuest=async(id)=>{
