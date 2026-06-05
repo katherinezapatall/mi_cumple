@@ -378,9 +378,58 @@ body {
   .gc-actions { width: 100%; justify-content: flex-end; }
   .code-display { font-size: 22px; }
 }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,0.7);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+  animation: fadeIn .15s ease;
+}
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.modal-box {
+  background: var(--card);
+  border: 2px solid var(--border2);
+  border-radius: var(--r);
+  padding: 1.75rem 1.5rem 1.5rem;
+  width: 100%; max-width: 380px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  animation: slideUp .18s ease;
+}
+@keyframes slideUp { from{transform:translateY(12px);opacity:0} to{transform:translateY(0);opacity:1} }
+.modal-icon { font-size: 2rem; text-align: center; margin-bottom: .75rem; }
+.modal-title { font-family: 'Abril Fatface', serif; font-size: 20px; color: var(--gold); text-align: center; margin-bottom: .5rem; }
+.modal-msg { font-size: 14px; color: var(--muted); text-align: center; line-height: 1.6; margin-bottom: 1.25rem; }
+.modal-input {
+  width: 100%; padding: 11px 14px;
+  border: 1px solid var(--border2); border-radius: var(--rs);
+  background: rgba(0,0,0,0.35); color: var(--text);
+  font-family: 'DM Sans', sans-serif; font-size: 18px;
+  font-weight: 500; text-align: center; letter-spacing: .08em;
+  outline: none; margin-bottom: 1.25rem;
+}
+.modal-input:focus { border-color: var(--gold); }
+.modal-btns { display: flex; gap: 10px; }
+.modal-btn-ok { flex: 1; padding: 11px; background: var(--gold); color: var(--darker); border: none; border-radius: var(--rs); font-size: 15px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all .15s; }
+.modal-btn-ok:hover { background: var(--gold2); }
+.modal-btn-cancel { flex: 1; padding: 11px; background: transparent; color: var(--muted); border: 1px solid var(--border2); border-radius: var(--rs); font-size: 15px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all .15s; }
+.modal-btn-cancel:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+.modal-btn-danger { flex: 1; padding: 11px; background: transparent; color: #e57373; border: 1px solid rgba(192,57,43,0.5); border-radius: var(--rs); font-size: 15px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all .15s; }
+.modal-btn-danger:hover { background: rgba(192,57,43,0.15); }
 </style>
 </head>
 <body>
+<!-- ── MODAL ── -->
+<div id="modal-overlay" class="modal-overlay" style="display:none" onclick="if(event.target===this)modalCancel()">
+  <div class="modal-box">
+    <div class="modal-icon" id="modal-icon">❓</div>
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-msg" id="modal-msg"></div>
+    <input type="password" class="modal-input" id="modal-input" style="display:none" onkeydown="if(event.key==='Enter')modalOk()">
+    <div class="modal-btns" id="modal-btns"></div>
+  </div>
+</div>
 
 <!-- ══════════════ HOME ══════════════ -->
 <div class="screen active" id="s-home">
@@ -795,10 +844,13 @@ import { getDatabase, ref, push, set, get, onValue, remove, update } from "https
 
 // ============================================================
 // 🔧 HIER DEINE FIREBASE-KONFIGURATION EINTRAGEN
+// IMPORTANTE: Esta key debe tener restricción de dominio en
+// Google Cloud Console → APIs → Credentials → HTTP referrers
+// Solo permitir: katherinezapatall.github.io/*
 // ============================================================
 function getFirebaseConfig() {
   return {
-    apiKey: "AIzaSyBnvhJKia3EZqwul82MLPOlyJinMORWprI",
+    apiKey: "REEMPLAZA_CON_TU_NUEVA_API_KEY",
     authDomain: "mi-cumple-90b22.firebaseapp.com",
     databaseURL: "https://mi-cumple-90b22-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "mi-cumple-90b22",
@@ -1675,7 +1727,7 @@ window.addEC=()=>{editComps.push({name:'',age:'adult',activity:'picnic'});window
 window.pickEdit=(btn,group,val)=>{ btn.closest('.radio-group').querySelectorAll('.rb').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); if(group==='act') editSelAct=val; else editSelAge=val; };
 
 window.saveGE=async(id)=>{
-  const n=document.getElementById('ei-name'); if(!n||!n.value.trim()){alert(t('errName'));return;}
+  const n=document.getElementById('ei-name'); if(!n||!n.value.trim()){await mAlert('⚠️',t('errName'),'');return;}
   const g=guests[id];
   const newName=n.value.trim();
   const newSnacks=editSnacks.map(s=>typeof s==='string'?{name:s,count:1}:s).filter(s=>s.name&&s.name.trim());
@@ -1687,7 +1739,7 @@ window.saveGE=async(id)=>{
     editBlankets===(g.blankets||0) &&
     JSON.stringify(newSnacks)===JSON.stringify(g.snacks||[]) &&
     JSON.stringify(newComps)===JSON.stringify(g.companions||[]);
-  if(noChange){ cancelGE(); alert(t('noChanges')); return; }
+  if(noChange){ cancelGE(); await mAlert('💬', t('noChanges'), ''); return; }
   const u={
     name:newName, activity:editSelAct, age:editSelAge,
     snacks:newSnacks, blankets:editBlankets,
@@ -1696,27 +1748,28 @@ window.saveGE=async(id)=>{
   };
   await update(ref(db,'events/'+currentEventId+'/guests/'+id),u);
   editGuestId=null;
-  showAlert('reg-ok', t('changesSaved'));
+  await mAlert('✅', t('changesSaved'), '');
 };
 
 window.delGuest=async(id)=>{
-  if(!confirm(t('confirmDelGuest'))) return;
+  const ok = await mConfirm('🗑️', t('confirmDelGuest'), '');
+  if(!ok) return;
   await remove(ref(db,'events/'+currentEventId+'/guests/'+id));
   if(id===myGuestId) myGuestId=null;
 };
 
 // PIN gate for editing/deleting other guests
 window.askPinForGuest=function(id, action){
-  const pin=prompt(t('promptGuestPin'));
+  const pin = await mPrompt('🔑', t('promptGuestPin'), '', '••••');
   if(!pin) return;
   const g=guests[id];
   const hash=simpleHash(pin+'guest'+g.name);
   if(hash===g.guestPinHash){
-    myGuestId=id; // temporarily grant access
+    myGuestId=id;
     if(action==='edit') startGE(id);
     else delGuest(id);
   } else {
-    alert(t('errPin'));
+    await mAlert('❌', t('errPin'), '');
   }
 };
 
@@ -1749,7 +1802,8 @@ window.saveEventDetails=async()=>{
   showAlert('event-saved-ok',t('eventSavedOk'));
 };
 window.deleteEvent=async()=>{
-  if(!confirm(t('confirmDelete')))return;
+  const ok = await mConfirm('🗑️', t('confirmDelete'), '');
+  if(!ok) return;
   await remove(ref(db,'events/'+currentEventId));
   await remove(ref(db,'codes/'+currentEventCode));
   if(guestsUnsub){guestsUnsub();guestsUnsub=null;}
@@ -1784,7 +1838,8 @@ window.adminDeleteEvent=async function(){
     const cs=await get(ref(db,'codes/'+code));
     if(!cs.exists()){ showAlert('admin-del-err','Code nicht gefunden / Código no encontrado'); return; }
     const id=cs.val();
-    if(!confirm(`Event "${code}" und alle Daten löschen?\n¿Eliminar el evento "${code}" y todos los datos?`)) return;
+    const ok = await mConfirm('🗑️', `Event "${code}"`, lang==='de'?'Event und alle Daten löschen?':lang==='es'?`¿Eliminar el evento "${code}" y todos los datos?`:`Delete event "${code}" and all data?`);
+    if(!ok) return;
     await remove(ref(db,'events/'+id));
     await remove(ref(db,'codes/'+code));
     document.getElementById('inp-admin-code').value='';
@@ -1836,7 +1891,8 @@ window.adminAddVoucher=async function(){
 };
 
 window.adminDeleteVoucher=async function(code){
-  if(!confirm(`Voucher "${code}" löschen?`)) return;
+  const ok = await mConfirm('🎟️', `Voucher "${code}"`, lang==='de'?'Diesen Voucher löschen?':lang==='es'?'¿Eliminar este voucher?':'Delete this voucher?');
+  if(!ok) return;
   try{
     await remove(ref(db,'vouchers/'+code));
     renderVouchers();
@@ -1904,7 +1960,8 @@ async function renderAdminEvents(){
 window.renderAdminEvents=renderAdminEvents;
 
 window.adminDeleteEventById=async function(id, code, voucher){
-  if(!confirm(`Event "${code}" löschen?\nAlle Daten werden entfernt.`)) return;
+  const ok = await mConfirm('🗑️', `Event "${code}"`, lang==='de'?'Event und alle Daten löschen?':lang==='es'?'¿Eliminar el evento y todos los datos?':'Delete event and all data?');
+  if(!ok) return;
   try{
     await remove(ref(db,'events/'+id));
     if(code) await remove(ref(db,'codes/'+code));
@@ -1917,6 +1974,66 @@ window.adminDeleteEventById=async function(id, code, voucher){
     renderVouchers();
   }catch(e){ showAlert('admin-del-err','Fehler: '+e.message); }
 };
+
+// ── MODAL SYSTEM ── replaces alert / confirm / prompt
+let _modalResolve = null;
+
+function showModal({icon='🎉', title='', msg='', inputType=null, inputPlaceholder='', buttons=[]}){
+  document.getElementById('modal-icon').textContent = icon;
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-msg').textContent = msg;
+  const inp = document.getElementById('modal-input');
+  if(inputType){
+    inp.type = inputType;
+    inp.placeholder = inputPlaceholder;
+    inp.value = '';
+    inp.style.display = 'block';
+    setTimeout(()=>inp.focus(), 50);
+  } else {
+    inp.style.display = 'none';
+  }
+  const btns = document.getElementById('modal-btns');
+  btns.innerHTML = '';
+  buttons.forEach(b=>{
+    const el = document.createElement('button');
+    el.textContent = b.label;
+    el.className = b.cls || 'modal-btn-ok';
+    el.onclick = ()=>{
+      const inputVal = inp.style.display!=='none' ? inp.value : null;
+      hideModal();
+      if(_modalResolve) _modalResolve(b.value==='__input__' ? inputVal : b.value);
+    };
+    btns.appendChild(el);
+  });
+  document.getElementById('modal-overlay').style.display = 'flex';
+  return new Promise(res=>{ _modalResolve = res; });
+}
+function hideModal(){
+  document.getElementById('modal-overlay').style.display = 'none';
+  _modalResolve = null;
+}
+window.modalCancel=()=>{ hideModal(); if(_modalResolve) _modalResolve(null); };
+
+function mAlert(icon, title, msg){
+  const ok = lang==='de'?'OK':lang==='es'?'OK':'OK';
+  return showModal({icon, title, msg, buttons:[{label:ok, cls:'modal-btn-ok', value:true}]});
+}
+function mConfirm(icon, title, msg){
+  const ok = lang==='de'?'Ja, löschen':lang==='es'?'Sí, eliminar':'Yes, delete';
+  const cancel = lang==='de'?'Abbrechen':lang==='es'?'Cancelar':'Cancel';
+  return showModal({icon, title, msg, buttons:[
+    {label:cancel, cls:'modal-btn-cancel', value:false},
+    {label:ok, cls:'modal-btn-danger', value:true}
+  ]});
+}
+function mPrompt(icon, title, msg, placeholder=''){
+  const ok = lang==='de'?'Bestätigen':lang==='es'?'Confirmar':'Confirm';
+  const cancel = lang==='de'?'Abbrechen':lang==='es'?'Cancelar':'Cancel';
+  return showModal({icon, title, msg, inputType:'password', inputPlaceholder:placeholder, buttons:[
+    {label:cancel, cls:'modal-btn-cancel', value:false},
+    {label:ok, cls:'modal-btn-ok', value:'__input__'}
+  ]});
+}
 
 applyLang();
 </script>
