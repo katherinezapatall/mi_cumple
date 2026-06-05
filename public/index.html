@@ -1123,20 +1123,20 @@ window.showManagePanel=()=>{ pinVerified=false; document.getElementById('pin-gat
 window.orgLogin=async()=>{
   const code=document.getElementById('inp-orglogin-code').value.trim().toUpperCase();
   const pin=document.getElementById('inp-orglogin-pin').value.trim();
-  if(!code){showAlert('orglogin-err', t('errCode')); return;}
-  if(!pin){showAlert('orglogin-err', t('errPin')); return;}
+  if(!code){mAlert('❌','',t('errCode')); return;}
+  if(!pin){mAlert('❌','',t('errPin')); return;}
   const btn=document.getElementById('btn-orglogin'); btn.disabled=true;
   // load event
   try{
     const cs=await get(ref(db,'codes/'+code));
-    if(!cs.exists()){showAlert('orglogin-err',t('errCode')); btn.disabled=false; return;}
+    if(!cs.exists()){mAlert('❌','',t('errCode')); btn.disabled=false; return;}
     const id=cs.val();
     const es=await get(ref(db,'events/'+id));
-    if(!es.exists()){showAlert('orglogin-err',t('errCode')); btn.disabled=false; return;}
+    if(!es.exists()){mAlert('❌','',t('errCode')); btn.disabled=false; return;}
     const evData=es.val();
     // verify PIN
     if(simpleHash(pin+code)!==evData.pinHash){
-      showAlert('orglogin-err',t('errPin')); btn.disabled=false; return;
+      mAlert('❌','',t('errPin')); btn.disabled=false; return;
     }
     // all good — load event and go straight to manage
     currentEventId=id; currentEventCode=code; currentEventData=evData;
@@ -1146,7 +1146,7 @@ window.orgLogin=async()=>{
     document.getElementById('organizer-bar').style.display='block';
     document.getElementById('inp-orglogin-code').value='';
     document.getElementById('inp-orglogin-pin').value='';
-  }catch(e){ showAlert('orglogin-err',t('errFb')); }
+  }catch(e){ mAlert('❌','',t('errFb')); }
   btn.disabled=false;
 };
 
@@ -1233,10 +1233,10 @@ window.createNewEvent=async()=>{
   const desc=document.getElementById('inp-edesc').value.trim();
   const pin=document.getElementById('inp-epin').value.trim();
   const voucher=document.getElementById('inp-voucher').value.trim().toUpperCase();
-  if(!voucher){showAlert('create-err',t('errVoucher'));return;}
-  if(!name){showAlert('create-err',t('errName'));return;}
-  if(!pin||pin.length<4){showAlert('create-err','Mindestens 4 Zeichen / Mín. 4 caracteres');return;}
-  if(!isConfigured){showAlert('create-err',t('errFb'));return;}
+  if(!voucher){mAlert('⚠️','',t('errVoucher'));return;}
+  if(!name){mAlert('⚠️','',t('errName'));return;}
+  if(!pin||pin.length<4){mAlert('⚠️','','Mindestens 4 Zeichen / Mín. 4 caracteres');return;}
+  if(!isConfigured){mAlert('❌','',t('errFb'));return;}
 
   const btn=document.getElementById('btn-create-event'); btn.disabled=true;
 
@@ -1244,12 +1244,12 @@ window.createNewEvent=async()=>{
   try{
     const vSnap=await get(ref(db,'vouchers/'+voucher));
     if(!vSnap.exists()){
-      showAlert('create-err',t('errVoucherInvalid'));
+      mAlert('❌','',t('errVoucherInvalid'));
       btn.disabled=false; return;
     }
     const vData=vSnap.val();
     if(vData.used){
-      showAlert('create-err',t('errVoucherUsed'));
+      mAlert('❌','',t('errVoucherUsed'));
       btn.disabled=false; return;
     }
   }catch(e){
@@ -1282,8 +1282,8 @@ window.createNewEvent=async()=>{
 // ── JOIN ──
 window.joinByCode=async()=>{
   const code=document.getElementById('inp-join-code').value.trim().toUpperCase();
-  if(!code){showAlert('join-err',t('errCode'));return;}
-  if(!isConfigured){showAlert('join-err',t('errFb'));return;}
+  if(!code){mAlert('❌','',t('errCode'));return;}
+  if(!isConfigured){mAlert('❌','',t('errFb'));return;}
   const btn=document.getElementById('btn-join'); btn.disabled=true;
   await loadEventByCode(code);
   btn.disabled=false;
@@ -1292,13 +1292,13 @@ window.joinByCode=async()=>{
 async function loadEventByCode(code){
   try{
     const cs=await get(ref(db,'codes/'+code));
-    if(!cs.exists()){showAlert('join-err',t('errCode'));return false;}
+    if(!cs.exists()){mAlert('❌','',t('errCode'));return false;}
     const id=cs.val();
     const es=await get(ref(db,'events/'+id));
-    if(!es.exists()){showAlert('join-err',t('errCode'));return false;}
+    if(!es.exists()){mAlert('❌','',t('errCode'));return false;}
     currentEventId=id; currentEventCode=code; currentEventData=es.val();
     loadEventScreen(); return true;
-  }catch(e){ showAlert('join-err',t('errFb')); return false; }
+  }catch(e){ mAlert('❌','',t('errFb')); return false; }
 }
 
 function loadEventScreen(){
@@ -1417,11 +1417,11 @@ window.changeBlankets=(d)=>{
 // ── SUBMIT REG ──
 window.submitReg=async()=>{
   const name=document.getElementById('inp-rname').value.trim();
-  if(!name){showAlert('reg-err',t('errName'));return;}
-  if(!selAct){showAlert('reg-err',t('errAct'));return;}
-  if(!selAge){showAlert('reg-err',t('errAge'));return;}
+  if(!name){mAlert('⚠️','',t('errName'));return;}
+  if(!selAct){mAlert('⚠️','',t('errAct'));return;}
+  if(!selAge){mAlert('⚠️','',t('errAge'));return;}
   const gpin=document.getElementById('inp-guest-pin').value.trim();
-  if(!gpin||gpin.length<3){showAlert('reg-err',t('errGuestPin'));return;}
+  if(!gpin||gpin.length<3){mAlert('⚠️','',t('errGuestPin'));return;}
   const snackRows=document.querySelectorAll('#snack-list-inp .snack-field-row');
   const snacks=Array.from(snackRows).map(row=>({
     name:(row.querySelector('.snack-name-inp')?.value||'').trim(),
@@ -1433,7 +1433,8 @@ window.submitReg=async()=>{
   try{
     const newRef=await push(ref(db,'events/'+currentEventId+'/guests'),{name,activity:selAct,age:selAge,snacks,blankets:blanketCount,companions:comps,guestPinHash,ts:Date.now()});
     myGuestId=newRef.key;
-    showAlert('reg-ok',t('regOk'));
+    showModal({icon:'🎉', title:t('regOk'), msg:'', buttons:[{label:'OK', cls:'modal-btn-ok', value:true}]});
+    setTimeout(()=>hideModal(), 3000);
     document.getElementById('inp-rname').value='';
     document.getElementById('inp-guest-pin').value='';
     snackFields=[]; blanketCount=0;    renderSnackFields();
@@ -1441,7 +1442,7 @@ window.submitReg=async()=>{
     document.getElementById('chk-comp').checked=false; document.getElementById('comp-box').style.display='none';
     companions=[]; selAct=null; selAge=null;
     document.querySelectorAll('#panel-reg .rb').forEach(b=>b.classList.remove('on'));
-  }catch(e){showAlert('reg-err',t('errFb'));}
+  }catch(e){mAlert('❌','',t('errFb'));}
   btn.disabled=false;
 };
 
@@ -1789,7 +1790,7 @@ window.askPinForGuest=async function(id, action){
 // ── MANAGE / PIN ──
 window.verifyPin=async()=>{
   const pin=document.getElementById('inp-pin').value.trim();
-  if(!pin){showAlert('pin-err',t('errPin'));return;}
+  if(!pin){mAlert('❌','',t('errPin'));return;}
   if(simpleHash(pin+currentEventCode)===currentEventData.pinHash){
     pinVerified=true;
     document.getElementById('pin-gate').style.display='none';
@@ -1799,7 +1800,7 @@ window.verifyPin=async()=>{
     document.getElementById('m-edesc').value=currentEventData.desc||'';
     document.getElementById('organizer-bar').style.display='block';
     renderManageGuests();
-  } else { showAlert('pin-err',t('errPin')); }
+  } else { mAlert('❌','',t('errPin')); }
 };
 window.saveEventDetails=async()=>{
   const name=document.getElementById('m-ename').value.trim();
@@ -1827,7 +1828,7 @@ window.deleteEvent=async()=>{
 // ── ADMIN ──
 window.verifyAdmin=async function(){
   const pw=document.getElementById('inp-admin-pw').value.trim();
-  if(!pw){ showAlert('admin-err','Bitte Passwort eingeben'); return; }
+  if(!pw){ mAlert('⚠️','','Bitte Passwort eingeben'); return; }
   try{
     const snap=await get(ref(db,'admin/password'));
     if(!snap.exists()){
@@ -1839,17 +1840,17 @@ window.verifyAdmin=async function(){
       document.getElementById('admin-content').style.display='block';
       document.getElementById('inp-admin-pw').value='';
     } else {
-      showAlert('admin-err','Falsches Passwort / Contraseña incorrecta');
+      mAlert('❌','','Falsches Passwort / Contraseña incorrecta');
     }
   }catch(e){ showAlert('admin-err','Fehler: '+e.message); }
 };
 
 window.adminDeleteEvent=async function(){
   const code=document.getElementById('inp-admin-code').value.trim().toUpperCase();
-  if(!code){ showAlert('admin-del-err','Bitte Event-Code eingeben / Ingresa el código'); return; }
+  if(!code){ mAlert('⚠️','','Bitte Event-Code eingeben / Ingresa el código'); return; }
   try{
     const cs=await get(ref(db,'codes/'+code));
-    if(!cs.exists()){ showAlert('admin-del-err','Code nicht gefunden / Código no encontrado'); return; }
+    if(!cs.exists()){ mAlert('❌','','Code nicht gefunden / Código no encontrado'); return; }
     const id=cs.val();
     const ok = await mConfirm('🗑️', `Event "${code}"`, lang==='de'?'Event und alle Daten löschen?':lang==='es'?`¿Eliminar el evento "${code}" y todos los datos?`:`Delete event "${code}" and all data?`);
     if(!ok) return;
@@ -1891,11 +1892,11 @@ async function renderVouchers(){
 
 window.adminAddVoucher=async function(){
   const code=document.getElementById('inp-new-voucher').value.trim().toUpperCase();
-  if(!code){ showAlert('admin-voucher-err','Bitte Code eingeben'); return; }
+  if(!code){ mAlert('⚠️','','Bitte Code eingeben'); return; }
   if(!/^[A-Z0-9\-]{3,20}$/.test(code)){ showAlert('admin-voucher-err','Nur Buchstaben, Zahlen und - erlaubt (3–20 Zeichen)'); return; }
   try{
     const existing=await get(ref(db,'vouchers/'+code));
-    if(existing.exists()){ showAlert('admin-voucher-err','Dieser Code existiert bereits / Este código ya existe'); return; }
+    if(existing.exists()){ mAlert('⚠️','','Dieser Code existiert bereits / Este código ya existe'); return; }
     await set(ref(db,'vouchers/'+code),{used:false,createdAt:Date.now()});
     document.getElementById('inp-new-voucher').value='';
     showAlert('admin-voucher-ok',`✓ Voucher "${code}" wurde erstellt.`);
