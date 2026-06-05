@@ -1,6 +1,10 @@
 {
+  "buildCommand": "sed 's|%%FIREBASE_API_KEY%%|'\"$FIREBASE_API_KEY\"'|g' public/index.html > index.html",
+  "outputDirectory": ".",
   "rewrites": [
-    { "source": "/", "destination": "/api/index" },
-    { "source": "/(.*)", "destination": "/api/index" }
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }
