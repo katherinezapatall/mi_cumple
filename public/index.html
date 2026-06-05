@@ -953,6 +953,7 @@ const T = {
     confirmDelete:'Sicher? Damit werden das Event und alle Anmeldungen unwiderruflich gelöscht.',
     eventSavedOk:'Änderungen gespeichert!', orgBarText:'Du bist die Gastgeberin',
     noChanges:'Keine Änderungen vorgenommen.', changesSaved:'Deine Änderungen wurden gespeichert! ✓',
+    deleteConfirmed:'Anmeldung wurde gelöscht. 🗑️',
     stBlankets:'Decken gesamt', allSnacks:'Alle Snacks',
     copy:'Kopieren', copied:'✓ Kopiert', blanketIcon:'🛏 Decken',
     managePanel:'Verwalten ⚙️', btnSaveEvent:'Änderungen speichern',
@@ -1024,6 +1025,7 @@ const T = {
     confirmDelete:'¿Seguro/a? Esto eliminará el evento y todos los registros permanentemente.',
     eventSavedOk:'¡Cambios guardados!', orgBarText:'Eres la organizadora',
     noChanges:'No realizaste ningún cambio.', changesSaved:'¡Tus cambios se guardaron! ✓',
+    deleteConfirmed:'Registro eliminado. 🗑️',
     stBlankets:'Mantas total', allSnacks:'Todos los snacks',
     copy:'Copiar', copied:'✓ Copiado', blanketIcon:'🛏 Mantas',
     managePanel:'Gestionar ⚙️', btnSaveEvent:'Guardar cambios',
@@ -1095,6 +1097,7 @@ const T = {
     confirmDelete:'Are you sure? This will permanently delete the event and all registrations.',
     eventSavedOk:'Changes saved!', orgBarText:"You're the organizer",
     noChanges:'No changes were made.', changesSaved:'Your changes have been saved! ✓',
+    deleteConfirmed:'Registration deleted. 🗑️',
     stBlankets:'Total blankets', allSnacks:'All snacks',
     copy:'Copy', copied:'✓ Copied', blanketIcon:'🛏 Blankets',
     managePanel:'Manage ⚙️', btnSaveEvent:'Save changes',
@@ -1762,8 +1765,9 @@ window.saveGE=async(id)=>{
   };
   await update(ref(db,'events/'+currentEventId+'/guests/'+id),u);
   editGuestId=null;
+  renderGuests();
   showModal({icon:'✅', title:t('changesSaved'), msg:'', buttons:[{label:'OK', cls:'modal-btn-ok', value:true}]});
-  setTimeout(()=>{ hideModal(); renderGuests(); }, 3000);
+  setTimeout(()=>hideModal(), 3000);
 };
 
 window.delGuest=async(id)=>{
@@ -1771,6 +1775,8 @@ window.delGuest=async(id)=>{
   if(!ok) return;
   await remove(ref(db,'events/'+currentEventId+'/guests/'+id));
   if(id===myGuestId) myGuestId=null;
+  showModal({icon:'🗑️', title:t('deleteConfirmed'), msg:'', buttons:[{label:'OK', cls:'modal-btn-ok', value:true}]});
+  setTimeout(()=>hideModal(), 2500);
 };
 
 // PIN gate for editing/deleting other guests
